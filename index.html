@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HONOR 缺陷回報系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f5f3ff', 100: '#ede9fe', 200: '#ddd6fe', 300: '#c4b5fd', 
+                            400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9', 
+                            800: '#5b21b6', 900: '#4c1d95', 950: '#2e1065'
+                        },
+                    },
+                    borderRadius: {
+                        'xl': '1rem',
+                        '2xl': '1.5rem',
+                        '3xl': '2rem',
+                    },
+                    animation: {
+                        'gradient-x': 'gradient-x 15s ease infinite',
+                    },
+                    keyframes: {
+                        'gradient-x': {
+                            '0%, 100%': { 'background-size': '200% 200%', 'background-position': 'left center' },
+                            '50%': { 'background-size': '200% 200%', 'background-position': 'right center' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .glass-panel {
+                @apply bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 shadow-2xl;
+            }
+            .input-field {
+                @apply w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 
+                       bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm
+                       text-gray-900 dark:text-white
+                       focus:ring-2 focus:ring-primary-400 focus:border-primary-500
+                       transition-all duration-300 outline-none;
+            }
+            .input-icon {
+                @apply absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 transition-colors duration-300;
+            }
+            .input-group:focus-within .input-icon {
+                @apply text-primary-500;
+            }
+            .input-label {
+                @apply block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5 ml-1;
+            }
+        }
+        
+        /* 隱藏原生網頁捲軸 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #8b5cf6; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #7c3aed; }
+        
+        body {
+            background-image: 
+                radial-gradient(at 10% 10%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 90% 90%, rgba(124, 58, 237, 0.1) 0px, transparent 50%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-[#0b0f19] transition-colors duration-500 min-h-screen font-sans">
+
+    <div class="fixed inset-0 z-[-1] overflow-hidden">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-primary-500 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-pulse"></div>
+        <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-pulse delay-1000"></div>
+    </div>
+
+<nav class="fixed w-full z-50 glass-panel border-none shadow-lg">
+    <div class="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <div class="p-2.5 rounded-xl bg-gradient-to-br from-primary-400 to-indigo-600 text-white shadow-md">
+                <i class="fas fa-cloud text-white text-3xl"></i>
+            </div>
+            <h1 class="text-2xl font-extrabold tracking-tighter text-gray-950 dark:text-white">
+                HONOR<span class="text-primary-500"> 缺陷回報系統</span>
+            </h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="theme-toggle" class="p-2.5 rounded-full hover:bg-primary-100 dark:hover:bg-gray-800 transition-all duration-300">
+                <i id="theme-icon" class="fas fa-moon text-primary-600 dark:text-yellow-400"></i>
+            </button>
+        </div>
+    </div>
+</nav>
+
+    <main class="pt-28 pb-16 px-4 md:px-6">
+        <div class="max-w-4xl mx-auto">
+            <div id="status-message" class="hidden mb-6 p-4 rounded-2xl text-center font-semibold text-lg animate-fade-in shadow-lg"></div>
+
+            <form id="bug-report-form" class="space-y-10">
+                
+                <section class="glass-panel p-8 rounded-3xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-primary-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500"></div>
+                    <h2 class="text-2xl font-bold mb-8 text-gray-950 dark:text-white flex items-center gap-3">
+                        <i class="fas fa-clipboard-list text-primary-500 bg-primary-100 dark:bg-primary-950 p-3 rounded-xl"></i>
+                        基本資訊
+                    </h2>
+                    <div class="grid grid-cols-1 gap-6">
+                        <div class="input-group relative">
+                            <label class="input-label">缺陷標題 <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <i class="fas fa-a input-icon"></i>
+                                <input type="text" name="entry.1284578460" required placeholder=" " class="input-field">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="input-group relative">
+                                <label class="input-label">項目代號 <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <i class="fas fa-mobile-alt input-icon"></i>
+                                    <select name="entry.993585954" id="config-items" class="input-field appearance-none"></select>
+                                    <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                </div>
+                            </div>
+                            <div class="input-group relative">
+                                <label class="input-label">缺陷類型 <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <i class="fas fa-tags input-icon"></i>
+                                    <select name="entry.2046480871" id="config-types" class="input-field appearance-none"></select>
+                                    <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="input-group relative">
+                                <label class="input-label">優先等級 <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <i class="fas fa-signal input-icon"></i>
+                                    <select name="entry.962148729" class="input-field appearance-none">
+                                        <option value="高" selected>高</option>
+                                        <option value="中">中</option>
+                                        <option value="低">低</option>
+                                    </select>
+                                    <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                </div>
+                            </div>
+                            <div class="input-group relative">
+                                <label class="input-label">工程師 <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <i class="fas fa-user input-icon"></i>
+                                    <select name="entry.1398182772" id="config-engineers" class="input-field appearance-none"></select>
+                                    <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="glass-panel p-8 rounded-3xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500"></div>
+                    <h2 class="text-2xl font-bold mb-8 text-gray-950 dark:text-white flex items-center gap-3">
+                        <i class="fas fa-laptop-code text-indigo-500 bg-indigo-100 dark:bg-indigo-950 p-3 rounded-xl"></i>
+                        測試環境
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="input-group relative">
+                            <label class="input-label">韌體版本 <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <i class="fas fa-code-branch input-icon"></i>
+                                <input type="text" name="entry.286789932" required placeholder="例如：10.0.0.175(C363E7R103P2)" class="input-field">
+                            </div>
+                        </div>
+                        <div class="input-group relative">
+                            <label class="input-label">Android 版本 <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <i class="fab fa-android input-icon"></i>
+                                <select name="entry.1190192839" id="config-android" class="input-field appearance-none"></select>
+                                <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                            </div>
+                        </div>
+                        <div class="input-group relative md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="relative">
+                                <label class="input-label">測試地點</label>
+                                <div class="relative">
+                                    <i class="fas fa-location-dot input-icon"></i>
+                                    <input type="text" name="entry.1226479925" placeholder="例如：Taipei, Taiwan" class="input-field">
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <label class="input-label">電信業者 <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <i class="fas fa-tower-cell input-icon"></i>
+                                    <select name="entry.844413540" id="config-carriers" class="input-field appearance-none"></select>
+                                    <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group relative">
+                            <label class="input-label">應用程式名稱</label>
+                            <div class="relative">
+                                <i class="fas fa-cubes input-icon"></i>
+                                <input type="text" name="entry.1510824500" placeholder="例如：com.google.android.apps.bard" class="input-field">
+                            </div>
+                        </div>
+                        <div class="input-group relative">
+                            <label class="input-label">應用程式版本</label>
+                            <div class="relative">
+                                <i class="fas fa-layer-group input-icon"></i>
+                                <input type="text" name="entry.989592262" placeholder="例如：1.0.882555348" class="input-field">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="glass-panel p-8 rounded-3xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-violet-500/10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500"></div>
+                    <h2 class="text-2xl font-bold mb-8 text-gray-950 dark:text-white flex items-center gap-3">
+                        <i class="fas fa-bug text-violet-500 bg-violet-100 dark:bg-violet-950 p-3 rounded-xl"></i>
+                        測試詳情
+                    </h2>
+                    <div class="space-y-6">
+                        <div class="input-group relative">
+                            <label class="input-label">測試前提 <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <i class="fas fa-vial input-icon !top-5 translate-y-0"></i>
+                                <textarea name="entry.1913307700" rows="2" placeholder="描述執行操作步驟前的狀態 ..." class="input-field !pl-11"></textarea>
+                            </div>
+                        </div>
+                        <div class="input-group relative">
+                            <label class="input-label">操作步驟 <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <i class="fas fa-list-ol input-icon !top-5 translate-y-0"></i>
+                                <textarea name="entry.512812719" rows="4" placeholder="例如：設定 > 行動網路 > 行動數據 ..." class="input-field !pl-11"></textarea>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="input-group relative">
+                                <label class="input-label text-red-600 dark:text-red-400">實際結果 <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <i class="fas fa-times-circle input-icon !top-5 translate-y-0 text-red-400"></i>
+                                    <textarea name="entry.1339000719" rows="3" placeholder="發生了什麼錯誤？" class="input-field !pl-11 border-red-200 dark:border-red-900 focus:ring-red-400 focus:border-red-500"></textarea>
+                                </div>
+                            </div>
+                            <div class="input-group relative">
+                                <label class="input-label text-green-600 dark:text-green-400">期望結果 <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <i class="fas fa-check-circle input-icon !top-5 translate-y-0 text-green-400"></i>
+                                    <textarea name="entry.157401378" rows="3" placeholder="正常應該是如何？" class="input-field !pl-11 border-green-200 dark:border-green-900 focus:ring-green-400 focus:border-green-500"></textarea>
+                                </div>
+                            </div>
+                        </div>
+						<div class="input-group relative">
+							<label class="input-label">備註</label>
+								<div class="relative">
+									<i class="fas fa-comment-dots input-icon !top-5 translate-y-0"></i>
+									<textarea name="entry.1256049622" rows="2" placeholder="其他補充說明或特殊情況 ..." class="input-field !pl-11"></textarea>
+								</div>
+						</div>
+                        <div class="input-group relative">
+                            <label class="input-label">對比機現象</label>
+                            <div class="relative">
+                                <i class="fas fa-code-compare input-icon"></i>
+                                <input type="text" name="entry.2042724742" placeholder="例如：OPPO Find X9 Pro 無此現象" class="input-field">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="input-group relative">
+                                <label class="input-label">復現次數 <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <i class="fas fa-redo-alt input-icon"></i>
+                                    <select name="entry.831502790" class="input-field appearance-none">
+                                        <option value="100%">穩定復現（100％）</option>
+                                        <option value="50%~99%">經常復現（50％～99％）</option>
+                                        <option value="1%~49%">偶爾復現（1％～49％）</option>
+                                    </select>
+                                    <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                </div>
+                            </div>
+                            <div class="input-group relative">
+                                <label class="input-label">日誌連結 <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <i class="fas fa-link input-icon"></i>
+                                    <input type="url" name="entry.1417454636" placeholder="https://" class="input-field">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <input type="hidden" name="entry.1612072974" value="待審核">
+
+                <div class="pt-6">
+                    <button type="submit" id="submit-btn" class="w-full bg-gradient-to-r from-primary-500 to-indigo-600 hover:from-primary-600 hover:to-indigo-700 text-white text-xl font-bold py-5 rounded-2xl shadow-lg hover:shadow-primary-500/20 transform transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 flex items-center justify-center gap-3">
+                        <span id="btn-text">提交</span>
+                        <i id="loading-icon" class="fas fa-satellite fa-spin hidden"></i>
+                        <i id="success-icon" class="fas fa-check-circle hidden animate-ping"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        // --- 1. 配置資料 (未來若要新增選項，修改這裡與 Google 表單) ---
+        const CONFIG = {
+            items: ['Magic8 Pro', 'Magic V6', 'X6d 5G', '600', '600 Pro', '600 Lite'],
+            types: ['詞條', '敏感詞彙', '送交測試', '內部測試', '試用反應', '售後反應'],
+            engineers: ['Auron', 'Leo', 'Miso'],
+            carriers: ['所有項目','中華電信', '遠傳電信', '臺灣大哥大', '無'],
+            androidVersions: ['Android 16 Baklava', 'Android 17 Cinnamon Bun']
+        };
+
+        // 渲染選項
+        function setupOptions() {
+            const mapping = {
+                'config-items': CONFIG.items,
+                'config-types': CONFIG.types,
+                'config-engineers': CONFIG.engineers,
+                'config-carriers': CONFIG.carriers,
+                'config-android': CONFIG.androidVersions
+            };
+            Object.keys(mapping).forEach(id => {
+                const select = document.getElementById(id);
+                mapping[id].forEach(opt => {
+                    const el = document.createElement('option');
+                    el.value = opt;
+                    el.textContent = opt;
+                    select.appendChild(el);
+                });
+            });
+        }
+
+        // --- 2. 暗黑模式切換 (預設開啟 Dark) ---
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const html = document.documentElement;
+
+        // 初始化圖示
+        function updateThemeIcon() {
+            if (html.classList.contains('dark')) {
+                themeIcon.className = 'fas fa-sun text-yellow-400';
+            } else {
+                themeIcon.className = 'fas fa-moon text-primary-600';
+            }
+        }
+        updateThemeIcon();
+
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            updateThemeIcon();
+            // 可加入 localStorage 快取使用者選擇
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+        });
+        
+        // 檢查快取
+        if (localStorage.getItem('theme') === 'light') {
+            html.classList.remove('dark');
+            updateThemeIcon();
+        }
+
+        // --- 3. 表單提交邏輯 ---
+        const form = document.getElementById('bug-report-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const btnText = document.getElementById('btn-text');
+        const loadingIcon = document.getElementById('loading-icon');
+        const successIcon = document.getElementById('success-icon');
+        const statusMsg = document.getElementById('status-message');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // UI 狀態切換 - 讀取中
+            submitBtn.disabled = true;
+            btnText.textContent = '正在儲存至資料庫　...';
+            loadingIcon.classList.remove('hidden');
+            submitBtn.classList.add('from-gray-500', 'to-gray-600');
+
+            const formData = new FormData(form);
+            const googleFormAction = "https://docs.google.com/forms/d/e/1FAIpQLScAk3t91h752HNUl3UYUKvFtx0zshP0M9SNNxhVRbsXPjo0iw/formResponse";
+
+            // 使用 no-cors 模式發送以避免跨網域問題
+            fetch(googleFormAction, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: formData
+            }).then(() => {
+                // UI 狀態切換 - 成功
+                loadingIcon.classList.add('hidden');
+                successIcon.classList.remove('hidden');
+                btnText.textContent = '儲存成功！';
+                submitBtn.classList.remove('from-gray-500', 'to-gray-600');
+                submitBtn.classList.add('from-green-500', 'to-green-600');
+
+                showStatus('🚀 提交成功！', 'bg-green-100 text-green-800 dark:bg-green-950/50 dark:text-green-300 border border-green-200 dark:border-green-800');
+                
+                setTimeout(() => {
+                    form.reset();
+                    btnText.textContent = '提交';
+                    successIcon.classList.add('hidden');
+                    submitBtn.classList.remove('from-green-500', 'to-green-600');
+                    submitBtn.disabled = false;
+                }, 3000);
+
+            }).catch(() => {
+                showStatus('❌ 提交失敗，請檢查網路連線。', 'bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-300 border border-red-200 dark:border-red-800');
+                btnText.textContent = '提交';
+                loadingIcon.classList.add('hidden');
+                submitBtn.classList.remove('from-gray-500', 'to-gray-600');
+                submitBtn.disabled = false;
+            });
+        });
+
+        function showStatus(text, classes) {
+            statusMsg.textContent = text;
+            statusMsg.className = `mb-6 p-5 rounded-2xl text-center font-bold text-lg shadow-xl animate-fade-in ${classes}`;
+            statusMsg.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // setTimeout(() => statusMsg.classList.add('hidden'), 5000);
+        }
+
+        // 初始化
+        setupOptions();
+    </script>
+</body>
+</html>
